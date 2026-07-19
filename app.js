@@ -1,29 +1,33 @@
 const WORKOUTS = [
-  {id:"upper-heavy",day:1,dayName:"Montag",time:"16:00",title:"Oberkörper schwer",exercises:[
+  {id:"upper-heavy",day:1,dayName:"Montag",time:"16:00",title:"Oberkörper schwer",type:"strength",exercises:[
     ["Schrägbankdrücken",4,"10",60],["Brustpresse",3,"10",50],["Brustgestütztes Rudern",4,"10",50],
     ["Latzug neutral",3,"10",55],["Schulterpresse",3,"10",35],["Seitheben Kabel",3,"10",7.5],
     ["Face Pulls",3,"10",20],["Shrugs",3,"10",60],["Trizepsdrücken Seil",3,"10",25],
     ["Kabelcurls",3,"10",20],["Hanging Leg Raises",3,"10",0]
   ]},
-  {id:"lower-heavy",day:3,dayName:"Mittwoch",time:"16:00",title:"Unterkörper schwer",exercises:[
+  {id:"lower-heavy",day:3,dayName:"Mittwoch",time:"16:00",title:"Unterkörper",type:"strength",exercises:[
     ["Beinpresse",4,"10",120],["Rumänisches Kreuzheben",4,"10",60],["Beinstrecker",3,"10",40],
     ["Wadenheben",4,"10",60],["Adduktoren",2,"10",40],["Abduktoren",2,"10",40],
     ["Crunch-Maschine",3,"10",30]
   ]},
-  {id:"upper-volume",day:4,dayName:"Donnerstag",time:"16:00",title:"Oberkörper Volumen",exercises:[
+  {id:"upper-volume",day:5,dayName:"Freitag",time:"16:00",title:"Oberkörper Volumen",type:"strength",exercises:[
     ["Flachbankdrücken",3,"10",50],["Butterfly oder Kabel-Flys",3,"10",35],["Latzug breit",3,"10",50],
     ["Kabelrudern",3,"10",45],["Reverse Butterfly",3,"10",25],["Seitheben",3,"10",8],
     ["Overhead Trizeps Kabel",3,"10",20],["Hammercurls",3,"10",12]
   ]}
 ];
 
-const RUNS = [
-  {day:2,dayName:"Dienstag",time:"07:00",title:"Intervalle 5–10 km"},
-  {day:5,dayName:"Freitag",time:"07:00",title:"Tempolauf"},
-  {day:6,dayName:"Samstag",time:"07:00",title:"Lockerer Lauf"}
+const WEEK = [
+  {day:1,dayName:"Montag",title:"Oberkörper schwer",type:"strength",workoutId:"upper-heavy",meta:"Krafttraining"},
+  {day:2,dayName:"Dienstag",title:"Freies Lauftraining",type:"run",meta:"Tempo und Strecke frei wählen"},
+  {day:3,dayName:"Mittwoch",title:"Unterkörper",type:"strength",workoutId:"lower-heavy",meta:"Krafttraining"},
+  {day:4,dayName:"Donnerstag",title:"Freies Lauftraining",type:"run",meta:"Tempo und Strecke frei wählen"},
+  {day:5,dayName:"Freitag",title:"Oberkörper Volumen",type:"strength",workoutId:"upper-volume",meta:"Krafttraining"},
+  {day:6,dayName:"Samstag",title:"Rest Day",type:"rest",meta:"Erholung, Spaziergang oder Mobility"},
+  {day:0,dayName:"Sonntag",title:"Rest Day",type:"rest",meta:"Erholung und Vorbereitung auf Montag"}
 ];
 
-const historyKey = "reppilot-history-v4"; // Bestehenden Verlauf weiterverwenden
+const historyKey = "reppilot-history-v4";
 const FIXED_REPS = 10;
 let active = null;
 let exerciseIndex = 0;
@@ -42,9 +46,13 @@ function toNumber(value){
 function formatKg(value){
   return new Intl.NumberFormat("de-DE",{maximumFractionDigits:1}).format(value);
 }
-function nextWorkout(){
+function todayPlan(){
+  const day = new Date().getDay();
+  return WEEK.find(item=>item.day===day) || WEEK[0];
+}
+function nextStrengthDay(){
   const today = new Date().getDay();
-  return WORKOUTS.map(w=>({...w,delta:(w.day-today+7)%7})).sort((a,b)=>a.delta-b.delta)[0];
+  return WORKOUTS.map(w=>({...w,delta:(w.day-today+7)%7 || 7})).sort((a,b)=>a.delta-b.delta)[0];
 }
 function lastExercise(name){
   const items = history();
@@ -69,19 +77,52 @@ function exerciseVolume(exercise){
     return sum + toNumber(set.weight) * reps;
   },0);
 }
+function iconFor(type){
+  if(type==="run")return "🏃";
+  if(type==="rest")return "😴";
+  return "🏋️";
+}
 function renderHome(){
-  const next = nextWorkout();
-  $("nextTitle").textContent = next.title;
-  $("nextMeta").textContent = `${next.dayName}, ${next.time} Uhr`;
-  $("startBtn").onclick = ()=>start(next.id);
-  $("plan").innerHTML = [...WORKOUTS,...RUNS].sort((a,b)=>a.day-b.day).map(item=>`
-    <article class="plan-item">
-      <div class="plan-day">${item.dayName}</div>
-      <div><h3>${item.title}</h3><p>${item.time} Uhr</p></div>
-    </article>`).join("");
+  const today = todayPlan();
+  $("todayIcon").textContent = iconFor(today.type);
+  $("todayLabel").textContent = `Heute ist ${today.dayName}`;
+  $("nextTitle").textContent = today.title;
+  $("nextMeta").textContent = today.meta;
+
+  const startBtn = $("startBtn");
+  const todayHint = $("todayHint");
+  if(today.type === "strength"){
+    startBtn.hidden = false;
+    startBtn.textContent = "Training starten";
+    startBtn.onclick = ()=>start(today.workoutId);
+    todayHint.textContent = "";
+  }else if(today.type === "run"){
+    startBtn.hidden = true;
+    todayHint.textContent = "Heute kannst du frei laufen – ohne festen Trainingsablauf.";
+  }else{
+    startBtn.hidden = true;
+    const next = nextStrengthDay();
+    todayHint.textContent = `Nächstes Krafttraining: ${next.dayName} – ${next.title}`;
+  }
+
+  $("plan").innerHTML = WEEK.slice().sort((a,b)=>((a.day+6)%7)-((b.day+6)%7)).map(item=>{
+    const action = item.type === "strength"
+      ? `<button class="plan-start" data-workout="${item.workoutId}">Starten</button>`
+      : `<span class="plan-badge ${item.type}">${item.type === "run" ? "Laufen" : "Erholung"}</span>`;
+    return `<article class="plan-item ${item.day===new Date().getDay()?"today":""}">
+      <div class="plan-icon">${iconFor(item.type)}</div>
+      <div class="plan-copy"><div class="plan-day">${item.dayName}</div><h3>${item.title}</h3><p>${item.meta}</p></div>
+      ${action}
+    </article>`;
+  }).join("");
+
+  document.querySelectorAll(".plan-start").forEach(button=>{
+    button.onclick = ()=>start(button.dataset.workout);
+  });
 }
 function start(id){
   const workout = WORKOUTS.find(x=>x.id===id);
+  if(!workout)return;
   active = {
     id:workout.id,
     title:workout.title,
@@ -161,7 +202,6 @@ function renderComplete(){
     const next = active.exercises[exerciseIndex+1];
     $("nextExerciseName").textContent = next.name;
     $("nextExerciseMeta").textContent = `${next.sets.length} Sätze · jeweils ${FIXED_REPS} Wiederholungen`;
-    $("startNextBtn").textContent = "Nächste Übung starten";
     const canSkip = exerciseIndex+2 < active.exercises.length;
     $("skipNextBtn").disabled = !canSkip;
     $("skipNextBtn").textContent = canSkip ? "Gerät besetzt – überspringen" : "Keine weitere Übung zum Tauschen";
@@ -191,6 +231,7 @@ function finish(){
   save(items);
   active = null;
   renderHistory();
+  renderHome();
   show("history");
 }
 function renderHistory(){
@@ -235,6 +276,7 @@ document.querySelectorAll("nav button").forEach(button=>button.onclick=()=>{
     if(!confirm("Das laufende Training wird abgebrochen. Fortfahren?"))return;
     active = null;
   }
+  if(button.dataset.view==="home")renderHome();
   show(button.dataset.view);
 });
 

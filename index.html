@@ -20,11 +20,13 @@
 
   <main>
     <section id="home" class="view active">
-      <article class="card hero">
-        <div>
-          <small>Nächstes Training</small>
+      <article class="card hero today-card">
+        <div class="today-icon" id="todayIcon">🏋️</div>
+        <div class="today-copy">
+          <small id="todayLabel">Heute</small>
           <h2 id="nextTitle"></h2>
           <p id="nextMeta"></p>
+          <p id="todayHint" class="today-hint"></p>
         </div>
         <button id="startBtn">Training starten</button>
       </article>

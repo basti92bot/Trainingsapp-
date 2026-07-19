@@ -59,3 +59,17 @@ nav button{background:transparent;color:var(--muted)}nav button.active{color:#11
   .hero{flex-direction:column;align-items:stretch}.hero button{width:100%}
   .history-item summary{align-items:flex-start}.volume small{max-width:80px}
 }
+.today-card{align-items:center}
+.today-icon{display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;border-radius:16px;background:#f9fafb;border:1px solid var(--line);font-size:27px}
+.today-copy{flex:1}.today-hint{margin-top:8px!important;font-size:14px}
+.plan-item.today{border:2px solid #111827}
+.plan-icon{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:13px;background:#f9fafb;font-size:21px}
+.plan-copy{flex:1;min-width:0}.plan-copy .plan-day{min-width:0;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.plan-start{padding:10px 13px;border-radius:11px}
+.plan-badge{padding:7px 10px;border-radius:999px;font-size:12px;font-weight:800;background:#eef2ff;color:#3730a3}
+.plan-badge.rest{background:#f3f4f6;color:#6b7280}
+@media(max-width:560px){
+  .today-card{display:grid;grid-template-columns:auto 1fr;align-items:start}
+  .today-card>button{grid-column:1/-1}
+  .plan-item{align-items:center}.plan-start{padding:9px 11px}
+}

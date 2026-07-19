@@ -1,15 +1,16 @@
-RepPilot WebApp v5
+RepPilot WebApp v6
 
-Neu in dieser Version:
-- Pro Bildschirm nur ein Satz
-- Wiederholungen vorerst fest auf 10
-- Nur Gewicht eingeben und Satz abschließen
-- Nach dem letzten Satz Abschlussbildschirm der Übung
-- Nächstes Gerät besetzt: Übung wird einen Platz nach hinten geschoben
-- Verlauf mit bewegtem Gesamtgewicht und Volumen je Übung
-- Bestehender Verlauf aus v4 bleibt erhalten
-- Neuer Service-Worker-Cache reppilot-v5
+Neu:
+- Der heutige Plan wird automatisch anhand des Wochentags angezeigt.
+- Montag: Oberkörper schwer
+- Dienstag: Freies Lauftraining
+- Mittwoch: Unterkörper
+- Donnerstag: Freies Lauftraining
+- Freitag: Oberkörper Volumen
+- Samstag und Sonntag: Rest Day
+- Alle drei Kraftpläne können zum Testen weiterhin direkt im Wochenplan gestartet werden.
+- Trainingsmodus, feste 10 Wiederholungen, Überspringen und Verlauf mit bewegtem Gewicht bleiben erhalten.
+- Neuer Service-Worker-Cache reppilot-v6.
 
-GitHub Pages:
-Alle Dateien aus diesem Ordner direkt in das Stammverzeichnis des Repositorys hochladen.
-Danach die Seite gegebenenfalls einmal mit Strg+F5 neu laden.
+Installation auf GitHub Pages:
+Alle Dateien aus diesem Ordner in den Hauptordner des Repositorys hochladen und vorhandene Dateien ersetzen.

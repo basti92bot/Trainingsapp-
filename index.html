@@ -48,7 +48,8 @@
 
       <article id="setPanel" class="card focus">
         <small>AKTUELLE ÜBUNG</small>
-        <h2 id="exerciseName"></h2>
+        <div class="exercise-title-row"><div id="exerciseIcon" class="exercise-icon-large"></div><h2 id="exerciseName"></h2></div>
+        <div class="technique-tip"><span aria-hidden="true">💡</span><p id="exerciseTip"></p></div>
         <div class="set-heading">
           <span id="setCounter"></span>
           <strong id="fixedReps"></strong>
@@ -64,6 +65,7 @@
 
       <article id="completePanel" class="card complete-card" hidden>
         <div class="checkmark">✓</div>
+        <div id="completedExerciseIcon" class="exercise-icon-complete"></div>
         <small>ÜBUNG ABGESCHLOSSEN</small>
         <h2 id="completedExercise"></h2>
         <p id="exerciseSummary"></p>
@@ -71,8 +73,9 @@
         <div id="nextExerciseBlock">
           <div class="next-exercise">
             <small>NÄCHSTE ÜBUNG</small>
-            <h3 id="nextExerciseName"></h3>
+            <div class="next-title-row"><div id="nextExerciseIcon" class="exercise-icon-next"></div><h3 id="nextExerciseName"></h3></div>
             <p id="nextExerciseMeta"></p>
+            <div class="next-technique-tip"><span aria-hidden="true">💡</span><p id="nextExerciseTip"></p></div>
           </div>
           <button id="startNextBtn" class="primary-large">Nächste Übung starten</button>
           <button id="skipNextBtn" class="secondary full">Gerät besetzt – überspringen</button>

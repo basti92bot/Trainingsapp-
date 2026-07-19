@@ -1,16 +1,5 @@
-RepPilot WebApp v6
+RepPilot WebApp v7
 
-Neu:
-- Der heutige Plan wird automatisch anhand des Wochentags angezeigt.
-- Montag: Oberkörper schwer
-- Dienstag: Freies Lauftraining
-- Mittwoch: Unterkörper
-- Donnerstag: Freies Lauftraining
-- Freitag: Oberkörper Volumen
-- Samstag und Sonntag: Rest Day
-- Alle drei Kraftpläne können zum Testen weiterhin direkt im Wochenplan gestartet werden.
-- Trainingsmodus, feste 10 Wiederholungen, Überspringen und Verlauf mit bewegtem Gewicht bleiben erhalten.
-- Neuer Service-Worker-Cache reppilot-v6.
+Neu: Für jede Übung wird ein passendes Gerätesymbol angezeigt – im Satzmodus, auf dem Abschlussbildschirm, bei der nächsten Übung und im Verlauf.
 
-Installation auf GitHub Pages:
-Alle Dateien aus diesem Ordner in den Hauptordner des Repositorys hochladen und vorhandene Dateien ersetzen.
+RepPilot v8: Kurze Technik-Tipps bei jeder Übung und Vorschau der nächsten Übung.

@@ -39,29 +39,49 @@
           <small id="counter"></small>
           <h2 id="workoutTitle"></h2>
         </div>
-        <button id="cancelBtn" class="secondary">Abbrechen</button>
+        <button id="cancelBtn" class="secondary compact">Abbrechen</button>
       </div>
 
       <div class="track"><div id="bar"></div></div>
 
-      <article class="card focus">
+      <article id="setPanel" class="card focus">
         <small>AKTUELLE ÜBUNG</small>
         <h2 id="exerciseName"></h2>
+        <div class="set-heading">
+          <span id="setCounter"></span>
+          <strong id="fixedReps"></strong>
+        </div>
+        <p id="previousSet" class="previous-set" hidden></p>
+        <label class="weight-label" for="weightInput">Gewicht</label>
+        <div class="weight-entry">
+          <input id="weightInput" type="number" inputmode="decimal" min="0" step="0.5" aria-label="Gewicht in Kilogramm">
+          <span>kg</span>
+        </div>
+        <button id="completeSetBtn" class="primary-large">Satz abschließen</button>
+      </article>
 
-        <div class="target-box">
-          <span>Wiederholungen</span>
-          <strong id="exerciseTarget"></strong>
+      <article id="completePanel" class="card complete-card" hidden>
+        <div class="checkmark">✓</div>
+        <small>ÜBUNG ABGESCHLOSSEN</small>
+        <h2 id="completedExercise"></h2>
+        <p id="exerciseSummary"></p>
+
+        <div id="nextExerciseBlock">
+          <div class="next-exercise">
+            <small>NÄCHSTE ÜBUNG</small>
+            <h3 id="nextExerciseName"></h3>
+            <p id="nextExerciseMeta"></p>
+          </div>
+          <button id="startNextBtn" class="primary-large">Nächste Übung starten</button>
+          <button id="skipNextBtn" class="secondary full">Gerät besetzt – überspringen</button>
         </div>
 
-        <span id="rec"></span>
-
-        <div id="sets"></div>
-
-        <p id="finishHint" class="finish-hint">Markiere alle Sätze als erledigt, um weiterzugehen.</p>
-
-        <div class="actions">
-          <button id="skipBtn" class="secondary skip">Übung überspringen</button>
-          <button id="nextBtn" disabled>Weiter</button>
+        <div id="finishWorkoutBlock" hidden>
+          <div class="workout-total">
+            <small>TRAINING ERLEDIGT</small>
+            <strong id="workoutVolumePreview"></strong>
+          </div>
+          <button id="finishWorkoutBtn" class="primary-large">Training speichern</button>
         </div>
       </article>
     </section>

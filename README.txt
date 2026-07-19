@@ -1,19 +1,9 @@
-RepPilot WebApp v2
+RepPilot WebApp v4
 
-Neu:
-- Nach Trainingsstart wird immer nur eine Übung angezeigt.
-- Mit Nächste Übung geht es direkt weiter.
-- Mit Zurück kannst du korrigieren.
-- Das letzte Gewicht wird beim nächsten Training übernommen.
-
-Netlify:
-1. ZIP entpacken.
-2. Den Ordner RepPilot_WebApp_v2 bei Netlify Drop hochladen.
-3. Neue URL auf dem iPhone öffnen.
-
-
-Version 3:
-- Neuer Button „Übung überspringen“.
-- Die aktuelle Übung tauscht den Platz mit der direkt folgenden Übung.
-- Beispiel: A, B, C wird nach Überspringen von A zu B, A, C.
-- Bei der letzten Übung ist Überspringen deaktiviert.
+Änderungen:
+- Wiederholungs-Eingabefeld entfernt.
+- Der feste Wiederholungsbereich wird nur angezeigt und gespeichert.
+- Immer nur eine Übung sichtbar.
+- Weiter ist erst möglich, wenn alle Sätze der aktuellen Übung erledigt sind.
+- Übung überspringen verschiebt sie genau um einen Platz nach hinten.
+- Gewicht bleibt weiterhin optional eintragbar.

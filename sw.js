@@ -1,4 +1,4 @@
-const CACHE = "reppilot-v8";
+const CACHE = "reppilot-v9";
 const ASSETS = ["./","./index.html","./styles.css","./app.js","./manifest.json","./icon-192.png","./icon-512.png"];
 self.addEventListener("install",event=>{
   self.skipWaiting();
@@ -11,9 +11,13 @@ self.addEventListener("activate",event=>{
   ]));
 });
 self.addEventListener("fetch",event=>{
+  if(event.request.method!=="GET" || new URL(event.request.url).origin!==self.location.origin)return;
   event.respondWith(fetch(event.request).then(response=>{
-    const copy=response.clone();
-    caches.open(CACHE).then(cache=>cache.put(event.request,copy));
+    if(response.ok){
+      const copy=response.clone();
+      event.waitUntil(caches.open(CACHE).then(cache=>cache.put(event.request,copy)));
+    }
     return response;
-  }).catch(()=>caches.match(event.request)));
+  }).catch(()=>caches.match(event.request).then(cached=>cached || caches.match("./index.html"))));
 });
+

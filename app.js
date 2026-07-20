@@ -19,14 +19,28 @@ const WORKOUTS = [
 
 const WEEK = [
   {day:1,dayName:"Montag",title:"Oberkörper schwer",type:"strength",workoutId:"upper-heavy",meta:"Krafttraining"},
-  {day:2,dayName:"Dienstag",title:"Freies Lauftraining",type:"run",meta:"Tempo und Strecke frei wählen"},
+  {day:2,dayName:"Dienstag",title:"Intervalltraining Laufband",type:"run",runId:"interval-treadmill",meta:"37 Minuten · 1 % Steigung"},
   {day:3,dayName:"Mittwoch",title:"Unterkörper",type:"strength",workoutId:"lower-heavy",meta:"Krafttraining"},
-  {day:4,dayName:"Donnerstag",title:"Freies Lauftraining",type:"run",meta:"Tempo und Strecke frei wählen"},
+  {day:4,dayName:"Donnerstag",title:"Lockerer Dauerlauf",type:"run",meta:"Ruhiges Tempo · ohne Zeitdruck"},
   {day:5,dayName:"Freitag",title:"Oberkörper Volumen",type:"strength",workoutId:"upper-volume",meta:"Krafttraining"},
   {day:6,dayName:"Samstag",title:"Rest Day",type:"rest",meta:"Erholung, Spaziergang oder Mobility"},
   {day:0,dayName:"Sonntag",title:"Rest Day",type:"rest",meta:"Erholung und Vorbereitung auf Montag"}
 ];
 
+const RUN_PLANS = {
+  "interval-treadmill":{
+    title:"Intervalltraining Laufband",
+    meta:"37 Minuten · Laufband auf 1 % Steigung stellen",
+    intro:"Die schnellen Abschnitte liegen knapp über deinem Zieltempo für 6 km unter 35 Minuten. Ändere die Geschwindigkeit am Laufband jeweils direkt beim Wechsel.",
+    steps:[
+      {title:"Einlaufen",duration:"8 Minuten",speed:"7,0–7,5 km/h"},
+      {title:"Schnelles Intervall",duration:"6 × 2 Minuten",speed:"10,5 km/h"},
+      {title:"Lockere Pause",duration:"Nach jedem Intervall 2 Minuten",speed:"7,0–7,5 km/h"},
+      {title:"Auslaufen",duration:"5 Minuten",speed:"6,0–6,5 km/h"}
+    ],
+    note:"Wenn du alle sechs schnellen Intervalle sauber schaffst, erhöhst du beim nächsten Mal auf 10,7 km/h. Nicht gleichzeitig Dauer und Geschwindigkeit steigern."
+  }
+};
 
 const TECHNIQUE_TIPS = {
   "Schrägbankdrücken":"Schulterblätter hinten lassen und Brust stolz halten.",
@@ -63,22 +77,34 @@ function techniqueTip(name){
 
 const historyKey = "reppilot-history-v4";
 const FIXED_REPS = 10;
+const REST_SECONDS = 90;
 let active = null;
 let exerciseIndex = 0;
 let setIndex = 0;
 let phase = "set";
+let restTimerId = null;
+let restEndsAt = 0;
+let restTotalSeconds = REST_SECONDS;
+let afterRest = null;
+let lastCompletedSet = null;
+let audioContext = null;
 const $ = id => document.getElementById(id);
 
-function history(){
+function getHistory(){
   try{return JSON.parse(localStorage.getItem(historyKey) || "[]")}catch{return []}
 }
-function save(items){localStorage.setItem(historyKey,JSON.stringify(items))}
+function saveHistory(items){localStorage.setItem(historyKey,JSON.stringify(items))}
 function toNumber(value){
   const parsed = Number(String(value).replace(",","."));
   return Number.isFinite(parsed) ? parsed : 0;
 }
 function formatKg(value){
   return new Intl.NumberFormat("de-DE",{maximumFractionDigits:1}).format(value);
+}
+function formatDate(value){
+  const date = new Date(value);
+  if(Number.isNaN(date.getTime()))return "Datum unbekannt";
+  return date.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"});
 }
 function todayPlan(){
   const day = new Date().getDay();
@@ -88,18 +114,23 @@ function nextStrengthDay(){
   const today = new Date().getDay();
   return WORKOUTS.map(w=>({...w,delta:(w.day-today+7)%7 || 7})).sort((a,b)=>a.delta-b.delta)[0];
 }
-function lastExercise(name){
-  const items = history();
+function lastWeightRecord(name, fallback){
+  const items = getHistory();
   for(let i=items.length-1;i>=0;i--){
-    const found = items[i].exercises?.find(x=>x.name===name);
-    if(found)return found;
+    const exercise = items[i].exercises?.find(x=>x.name===name);
+    const completed = exercise?.sets?.slice().reverse().find(set=>{
+      const raw = String(set.weight ?? "").replace(",",".").trim();
+      return set.done && raw !== "" && Number.isFinite(Number(raw));
+    });
+    if(completed){
+      return {
+        exists:true,
+        weight:toNumber(completed.weight),
+        date:items[i].finishedAt || items[i].startedAt
+      };
+    }
   }
-  return null;
-}
-function lastWeight(name, fallback){
-  const previous = lastExercise(name);
-  const completed = previous?.sets?.filter(s=>s.done).reverse().find(s=>Number.isFinite(toNumber(s.weight)));
-  return completed ? toNumber(completed.weight) : fallback;
+  return {exists:false,weight:fallback,date:null};
 }
 function workoutVolume(workout){
   return workout.exercises.reduce((sum,e)=>sum + exerciseVolume(e),0);
@@ -179,9 +210,14 @@ function renderHome(){
     startBtn.textContent = "Training starten";
     startBtn.onclick = ()=>start(today.workoutId);
     todayHint.textContent = "";
+  }else if(today.type === "run" && today.runId){
+    startBtn.hidden = false;
+    startBtn.textContent = "Laufplan anzeigen";
+    startBtn.onclick = ()=>openRunPlan(today.runId);
+    todayHint.textContent = "Geschwindigkeiten und Intervalle direkt fürs Laufband.";
   }else if(today.type === "run"){
     startBtn.hidden = true;
-    todayHint.textContent = "Heute kannst du frei laufen – ohne festen Trainingsablauf.";
+    todayHint.textContent = "Heute locker laufen, sodass du dich noch unterhalten könntest.";
   }else{
     startBtn.hidden = true;
     const next = nextStrengthDay();
@@ -191,7 +227,9 @@ function renderHome(){
   $("plan").innerHTML = WEEK.slice().sort((a,b)=>((a.day+6)%7)-((b.day+6)%7)).map(item=>{
     const action = item.type === "strength"
       ? `<button class="plan-start" data-workout="${item.workoutId}">Starten</button>`
-      : `<span class="plan-badge ${item.type}">${item.type === "run" ? "Laufen" : "Erholung"}</span>`;
+      : item.runId
+        ? `<button class="plan-start plan-run" data-run="${item.runId}">Plan</button>`
+        : `<span class="plan-badge ${item.type}">${item.type === "run" ? "Laufen" : "Erholung"}</span>`;
     return `<article class="plan-item ${item.day===new Date().getDay()?"today":""}">
       <div class="plan-icon">${iconFor(item.type)}</div>
       <div class="plan-copy"><div class="plan-day">${item.dayName}</div><h3>${item.title}</h3><p>${item.meta}</p></div>
@@ -199,8 +237,11 @@ function renderHome(){
     </article>`;
   }).join("");
 
-  document.querySelectorAll(".plan-start").forEach(button=>{
+  document.querySelectorAll(".plan-start[data-workout]").forEach(button=>{
     button.onclick = ()=>start(button.dataset.workout);
+  });
+  document.querySelectorAll(".plan-run").forEach(button=>{
+    button.onclick = ()=>openRunPlan(button.dataset.run);
   });
 }
 function start(id){
@@ -210,22 +251,28 @@ function start(id){
     id:workout.id,
     title:workout.title,
     startedAt:new Date().toISOString(),
-    exercises:workout.exercises.map(([name,setCount,repRange,defaultWeight,icon])=>({
-      name,
-      icon:icon || iconKeyForName(name),
-      repRange,
-      skippedCount:0,
-      sets:Array.from({length:setCount},(_,i)=>({
-        index:i+1,
-        weight:lastWeight(name,defaultWeight),
-        reps:FIXED_REPS,
-        done:false
-      }))
-    }))
+    exercises:workout.exercises.map(([name,setCount,repRange,defaultWeight,icon])=>{
+      const previous = lastWeightRecord(name,defaultWeight);
+      return {
+        name,
+        icon:icon || iconKeyForName(name),
+        repRange,
+        skippedCount:0,
+        lastTraining:previous.exists ? {weight:previous.weight,date:previous.date} : null,
+        sets:Array.from({length:setCount},(_,i)=>({
+          index:i+1,
+          weight:previous.weight,
+          reps:FIXED_REPS,
+          done:false
+        }))
+      };
+    })
   };
   exerciseIndex = 0;
   setIndex = 0;
   phase = "set";
+  cancelRestTimer();
+  lastCompletedSet = null;
   renderWorkout();
   show("workout");
 }
@@ -236,8 +283,11 @@ function renderWorkout(){
   $("counter").textContent = `Übung ${exerciseIndex+1} von ${active.exercises.length}`;
   $("bar").style.width = `${((exerciseIndex + (phase==="complete"?1:0))/active.exercises.length)*100}%`;
   $("setPanel").hidden = phase !== "set";
+  $("restPanel").hidden = phase !== "rest";
   $("completePanel").hidden = phase !== "complete";
-  if(phase === "set") renderSet(); else renderComplete();
+  if(phase === "set")renderSet();
+  else if(phase === "rest")renderRest();
+  else renderComplete();
 }
 function renderSet(){
   const exercise = currentExercise();
@@ -247,6 +297,12 @@ function renderSet(){
   $("exerciseIcon").innerHTML = equipmentIcon(exercise.icon || iconKeyForName(exercise.name), exercise.name);
   $("setCounter").textContent = `Satz ${setIndex+1} von ${exercise.sets.length}`;
   $("fixedReps").textContent = `${FIXED_REPS} Wiederholungen`;
+  const previous = exercise.lastTraining;
+  $("lastTraining").hidden = !previous;
+  if(previous){
+    $("lastWeightValue").textContent = `${formatKg(previous.weight)} kg`;
+    $("lastWeightDate").textContent = `vom ${formatDate(previous.date)}`;
+  }
   $("weightInput").value = set.weight;
   $("previousSet").hidden = setIndex === 0;
   if(setIndex>0){
@@ -264,17 +320,107 @@ function completeSet(){
     $("weightInput").focus();
     return;
   }
+  prepareTimerFeedback();
   set.weight = weight;
   set.reps = FIXED_REPS;
   set.done = true;
+  lastCompletedSet = {
+    exercise:exercise.name,
+    number:setIndex+1,
+    weight,
+    reps:FIXED_REPS
+  };
   if(setIndex < exercise.sets.length-1){
-    setIndex++;
-    exercise.sets[setIndex].weight = weight;
-    renderWorkout();
+    const nextSetIndex = setIndex+1;
+    exercise.sets[nextSetIndex].weight = weight;
+    beginRest({type:"set",setIndex:nextSetIndex});
+  }else{
+    beginRest({type:"complete"});
+  }
+}
+function prepareTimerFeedback(){
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if(!AudioContextClass)return;
+  if(!audioContext)audioContext = new AudioContextClass();
+  if(audioContext.state === "suspended")audioContext.resume().catch(()=>{});
+}
+function notifyTimerDone(){
+  if("vibrate" in navigator)navigator.vibrate([250,120,250]);
+  if(!audioContext)return;
+  const now = audioContext.currentTime;
+  [0,.2].forEach(offset=>{
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.value = 880;
+    gain.gain.setValueAtTime(.001,now+offset);
+    gain.gain.exponentialRampToValueAtTime(.22,now+offset+.01);
+    gain.gain.exponentialRampToValueAtTime(.001,now+offset+.15);
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start(now+offset);
+    oscillator.stop(now+offset+.16);
+  });
+}
+function beginRest(next){
+  cancelRestTimer();
+  afterRest = next;
+  restTotalSeconds = REST_SECONDS;
+  restEndsAt = Date.now() + REST_SECONDS*1000;
+  phase = "rest";
+  renderWorkout();
+  restTimerId = window.setInterval(updateRestTimer,250);
+}
+function renderRest(){
+  if(lastCompletedSet){
+    $("restSetSummary").textContent = `${lastCompletedSet.exercise}: Satz ${lastCompletedSet.number} erledigt · ${formatKg(lastCompletedSet.weight)} kg × ${lastCompletedSet.reps}`;
+  }
+  if(afterRest?.type === "set"){
+    $("restNext").textContent = `Danach: Satz ${afterRest.setIndex+1} von ${currentExercise().sets.length}`;
+  }else if(exerciseIndex < active.exercises.length-1){
+    $("restNext").textContent = `Danach: ${active.exercises[exerciseIndex+1].name}`;
+  }else{
+    $("restNext").textContent = "Danach kannst du das Training speichern.";
+  }
+  updateRestTimer();
+}
+function updateRestTimer(){
+  if(phase !== "rest")return;
+  const remaining = Math.max(0,Math.ceil((restEndsAt-Date.now())/1000));
+  const minutes = Math.floor(remaining/60);
+  const seconds = remaining%60;
+  $("restTime").textContent = `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
+  $("restClock").setAttribute("aria-label",`Noch ${remaining} Sekunden Pause`);
+  const elapsedRatio = Math.min(1,Math.max(0,1-remaining/restTotalSeconds));
+  $("restClock").style.setProperty("--rest-progress",`${elapsedRatio*360}deg`);
+  if(remaining === 0)finishRest(true);
+}
+function addRestTime(){
+  if(phase !== "rest")return;
+  restEndsAt += 30000;
+  restTotalSeconds += 30;
+  updateRestTimer();
+}
+function skipRest(){
+  if(phase === "rest")finishRest(false);
+}
+function finishRest(withFeedback){
+  const next = afterRest;
+  cancelRestTimer();
+  if(withFeedback)notifyTimerDone();
+  if(next?.type === "set"){
+    setIndex = next.setIndex;
+    phase = "set";
   }else{
     phase = "complete";
-    renderWorkout();
   }
+  renderWorkout();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function cancelRestTimer(){
+  if(restTimerId !== null)window.clearInterval(restTimerId);
+  restTimerId = null;
+  afterRest = null;
 }
 function renderComplete(){
   const finished = currentExercise();
@@ -299,6 +445,7 @@ function renderComplete(){
   }
 }
 function startNextExercise(){
+  cancelRestTimer();
   if(exerciseIndex >= active.exercises.length-1)return;
   exerciseIndex++;
   setIndex = 0;
@@ -314,17 +461,18 @@ function skipNextExercise(){
   renderComplete();
 }
 function finish(){
+  cancelRestTimer();
   active.finishedAt = new Date().toISOString();
-  const items = history();
+  const items = getHistory();
   items.push(active);
-  save(items);
+  saveHistory(items);
   active = null;
   renderHistory();
   renderHome();
   show("history");
 }
 function renderHistory(){
-  const items = history().slice().reverse();
+  const items = getHistory().slice().reverse();
   $("historyList").innerHTML = items.length ? items.map((workout,workoutIndex)=>{
     const date = new Date(workout.finishedAt || workout.startedAt).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"});
     const sets = workout.exercises?.reduce((sum,e)=>sum+(e.sets?.filter(s=>s.done).length||0),0) || 0;
@@ -343,6 +491,23 @@ function renderHistory(){
     </details>`;
   }).join("") : `<div class="empty">Noch keine Trainings gespeichert.</div>`;
 }
+function openRunPlan(id){
+  const plan = RUN_PLANS[id];
+  if(!plan)return;
+  $("runTitle").textContent = plan.title;
+  $("runMeta").textContent = plan.meta;
+  $("runIntro").textContent = plan.intro;
+  $("runSteps").innerHTML = plan.steps.map((step,index)=>`
+    <article class="run-step">
+      <span class="run-step-number">${index+1}</span>
+      <div><h3>${step.title}</h3><p>${step.duration}</p></div>
+      <div class="run-speed">${step.speed}<small>Geschwindigkeit</small></div>
+    </article>`
+  ).join("");
+  $("runNote").textContent = plan.note;
+  show("run");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
 function show(id){
   document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
   $(id).classList.add("active");
@@ -351,11 +516,15 @@ function show(id){
 
 $("completeSetBtn").onclick = completeSet;
 $("weightInput").addEventListener("keydown",event=>{if(event.key==="Enter")completeSet()});
+$("addRestBtn").onclick = addRestTime;
+$("skipRestBtn").onclick = skipRest;
+$("closeRunBtn").onclick = ()=>{renderHome();show("home")};
 $("startNextBtn").onclick = startNextExercise;
 $("skipNextBtn").onclick = skipNextExercise;
 $("finishWorkoutBtn").onclick = finish;
 $("cancelBtn").onclick = ()=>{
   if(confirm("Training wirklich abbrechen?")){
+    cancelRestTimer();
     active = null;
     show("home");
   }
@@ -363,6 +532,7 @@ $("cancelBtn").onclick = ()=>{
 document.querySelectorAll("nav button").forEach(button=>button.onclick=()=>{
   if(active && button.dataset.view!=="workout"){
     if(!confirm("Das laufende Training wird abgebrochen. Fortfahren?"))return;
+    cancelRestTimer();
     active = null;
   }
   if(button.dataset.view==="home")renderHome();

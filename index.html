@@ -55,12 +55,37 @@
           <strong id="fixedReps"></strong>
         </div>
         <p id="previousSet" class="previous-set" hidden></p>
+        <div id="lastTraining" class="last-training" hidden>
+          <div>
+            <small>LETZTES TRAINING</small>
+            <strong id="lastWeightValue"></strong>
+          </div>
+          <div class="last-training-date">
+            <span id="lastWeightDate"></span>
+            <small>Automatisch übernommen</small>
+          </div>
+        </div>
         <label class="weight-label" for="weightInput">Gewicht</label>
         <div class="weight-entry">
           <input id="weightInput" type="number" inputmode="decimal" min="0" step="0.5" aria-label="Gewicht in Kilogramm">
           <span>kg</span>
         </div>
         <button id="completeSetBtn" class="primary-large">Satz abschließen</button>
+      </article>
+
+      <article id="restPanel" class="card rest-card" hidden>
+        <small>PAUSE</small>
+        <h2>Durchatmen</h2>
+        <div id="restClock" class="rest-clock" role="timer" aria-live="polite">
+          <strong id="restTime">01:30</strong>
+          <span>Minuten</span>
+        </div>
+        <p id="restSetSummary" class="rest-set-summary"></p>
+        <p id="restNext" class="rest-next"></p>
+        <div class="rest-actions">
+          <button id="addRestBtn" class="secondary">+30 Sekunden</button>
+          <button id="skipRestBtn">Pause überspringen</button>
+        </div>
       </article>
 
       <article id="completePanel" class="card complete-card" hidden>
@@ -91,6 +116,22 @@
       </article>
     </section>
 
+    <section id="run" class="view">
+      <div class="top">
+        <div>
+          <small>LAUFTRAINING</small>
+          <h2 id="runTitle"></h2>
+        </div>
+        <button id="closeRunBtn" class="secondary compact">Zurück</button>
+      </div>
+      <article class="card run-card">
+        <p id="runMeta" class="run-meta"></p>
+        <p id="runIntro"></p>
+        <div id="runSteps" class="run-steps"></div>
+        <p id="runNote" class="run-note"></p>
+      </article>
+    </section>
+
     <section id="history" class="view">
       <h2>Verlauf</h2>
       <div id="historyList"></div>
@@ -105,3 +146,4 @@
   <script src="app.js"></script>
 </body>
 </html>
+

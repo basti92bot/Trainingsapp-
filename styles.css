@@ -104,3 +104,40 @@ nav button{background:transparent;color:var(--muted)}nav button.active{color:#11
 .next-technique-tip{margin-top:12px;background:white;border-color:#e5e7eb;color:#374151}
 .technique-tip span,.next-technique-tip span{font-size:17px;line-height:1.35}
 .technique-tip p,.next-technique-tip p{margin:0;font-size:14px;font-weight:700;line-height:1.4}
+
+/* RepPilot v9: letztes Gewicht, Pausentimer und Laufplan */
+.last-training{display:flex;justify-content:space-between;gap:14px;align-items:center;margin:0 0 16px;padding:13px 14px;border-radius:14px;background:#eef2ff;border:1px solid #c7d2fe}
+.last-training strong{display:block;margin-top:4px;font-size:20px;color:#1e1b4b}
+.last-training-date{text-align:right}
+.last-training-date span,.last-training-date small{display:block}
+.last-training-date span{font-weight:800;color:#3730a3}
+.last-training-date small{margin-top:4px;font-size:11px;color:#6366f1}
+.rest-card{text-align:center}
+.rest-card>small{font-size:12px;letter-spacing:.1em;font-weight:800}
+.rest-card h2{margin:5px 0 18px}
+.rest-clock{--rest-progress:0deg;position:relative;display:grid;place-content:center;width:190px;height:190px;margin:0 auto 20px;border-radius:50%;background:conic-gradient(#111827 var(--rest-progress),#e5e7eb 0)}
+.rest-clock::before{content:"";position:absolute;inset:12px;border-radius:50%;background:#fff}
+.rest-clock strong,.rest-clock span{position:relative;z-index:1}
+.rest-clock strong{font-size:48px;line-height:1;font-variant-numeric:tabular-nums}
+.rest-clock span{margin-top:7px;color:var(--muted);font-weight:700}
+.rest-set-summary{margin:0;font-weight:800}
+.rest-next{margin:7px 0 18px;color:var(--muted)}
+.rest-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.run-card{margin-top:16px}
+.run-meta{margin:0 0 10px;color:var(--muted);font-weight:800}
+.run-card>p{line-height:1.5}
+.run-steps{display:grid;gap:10px;margin:18px 0}
+.run-step{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:12px;padding:13px;border:1px solid var(--line);border-radius:14px;background:#f9fafb}
+.run-step-number{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#111827;color:#fff;font-weight:900}
+.run-step h3{margin:0 0 3px;font-size:16px}
+.run-step p{margin:0;color:var(--muted);font-size:13px}
+.run-speed{text-align:right;font-weight:850}
+.run-speed small{display:block;margin-top:3px;font-size:11px}
+.run-note{padding:13px 14px;border-radius:14px;background:#fffbeb;border:1px solid #fde68a;color:#78350f;font-weight:700}
+@media(max-width:560px){
+  .last-training{align-items:flex-start}.last-training-date{max-width:55%}
+  .rest-actions{grid-template-columns:1fr}.rest-actions button{width:100%}
+  .rest-clock{width:176px;height:176px}.rest-clock strong{font-size:44px}
+  .run-step{grid-template-columns:40px 1fr}.run-speed{grid-column:2;text-align:left}
+}
+
